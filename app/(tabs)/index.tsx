@@ -1,75 +1,278 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import { useAuth } from "@/providers/AuthProvider";
+import { useReports } from "@/providers/ReportsProvider";
+import { Image } from "expo-image";
+import { router } from "expo-router";
+import { AlertTriangle, Clock, Coins, Eye, MapPin } from "lucide-react-native";
+import React, { useState } from "react";
+import {
+  RefreshControl,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function FeedScreen() {
+  const [refreshing, setRefreshing] = useState(false);
+  const reportsContext = useReports();
+  const authContext = useAuth();
 
-export default function HomeScreen() {
+  const { reports } = reportsContext || { reports: [] };
+  const { user } = authContext || { user: null };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setTimeout(() => setRefreshing(false), 1000);
+  };
+
+  const activeReports = reports.filter((report) => report.status === "active");
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
-            })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.headerTitle}>SafeKid Nepal</Text>
+          <Text style={styles.headerSubtitle}>Missing Child Alerts</Text>
+        </View>
+        {user && (
+          <View style={styles.tokenContainer}>
+            <Coins size={16} color="#FFB800" />
+            <Text style={styles.tokenText}>{user.tokens}</Text>
+          </View>
+        )}
+      </View>
+
+      <ScrollView
+        style={styles.content}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {activeReports.length === 0 ? (
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No active alerts</Text>
+            <Text style={styles.emptyText}>
+              When missing child reports are posted, they will appear here
+            </Text>
+          </View>
+        ) : (
+          <View style={styles.reportsList}>
+            {activeReports.map((report) => (
+              <TouchableOpacity
+                key={report.id}
+                style={styles.reportCard}
+                onPress={() => console.log("Report details:", report.id)}
+              >
+                <Image
+                  source={{ uri: report.childPhoto }}
+                  style={styles.childPhoto}
+                  contentFit="cover"
+                />
+
+                <View style={styles.reportInfo}>
+                  <Text style={styles.childName}>{report.childName}</Text>
+                  <Text style={styles.childAge}>Age: {report.childAge}</Text>
+
+                  <View style={styles.locationContainer}>
+                    <MapPin size={14} color="#666" />
+                    <Text style={styles.location}>
+                      {report.lastSeenLocation}
+                    </Text>
+                  </View>
+
+                  <View style={styles.metaContainer}>
+                    <View style={styles.timeContainer}>
+                      <Clock size={14} color="#666" />
+                      <Text style={styles.timeText}>
+                        {new Date(report.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+
+                    <View style={styles.sightingsContainer}>
+                      <Eye size={14} color="#666" />
+                      <Text style={styles.sightingsText}>
+                        {report.sightings.length} sightings
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+      </ScrollView>
+
+      {user && (
+        <View style={styles.fabContainer}>
+          {user.role === "parent" && (
+            <TouchableOpacity
+              style={[styles.fab, styles.reportFab]}
+              onPress={() => router.push("/post-report")}
+            >
+              <AlertTriangle size={24} color="white" />
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            style={[styles.fab, styles.sightingFab]}
+            onPress={() => router.push("/sighting-form")}
+          >
+            <Eye size={24} color="white" />
+          </TouchableOpacity>
+        </View>
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: "#f8f9fa",
   },
-  stepContainer: {
-    gap: 8,
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 16,
+    backgroundColor: "white",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#333",
+  },
+  headerSubtitle: {
+    fontSize: 14,
+    color: "#666",
+  },
+  tokenContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFF8E1",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    gap: 4,
+  },
+  tokenText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#F57C00",
+  },
+  content: {
+    flex: 1,
+  },
+  emptyState: {
+    padding: 40,
+    alignItems: "center",
+  },
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#333",
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  emptyText: {
+    fontSize: 14,
+    color: "#666",
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  reportsList: {
+    padding: 16,
+    gap: 16,
+  },
+  reportCard: {
+    backgroundColor: "white",
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    gap: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  childPhoto: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  reportInfo: {
+    flex: 1,
+    gap: 4,
+  },
+  childName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#333",
+  },
+  childAge: {
+    fontSize: 14,
+    color: "#666",
+  },
+  locationContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    marginTop: 4,
+  },
+  location: {
+    fontSize: 14,
+    color: "#666",
+    flex: 1,
+  },
+  metaContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 8,
+  },
+  timeContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  timeText: {
+    fontSize: 12,
+    color: "#666",
+  },
+  sightingsContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  sightingsText: {
+    fontSize: 12,
+    color: "#666",
+  },
+  fabContainer: {
+    position: "absolute",
+    bottom: 20,
+    right: 20,
+    gap: 12,
+  },
+  fab: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  reportFab: {
+    backgroundColor: "#FF6B6B",
+  },
+  sightingFab: {
+    backgroundColor: "#4CAF50",
   },
 });
