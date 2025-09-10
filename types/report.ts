@@ -33,8 +33,8 @@ export interface Sighting {
   description: string;
   location: string;
   coordinates?: {
-    latitude: number;
-    longitude: number;
+    latitude: number|undefined;
+    longitude: number|undefined;
   };
   tokensEarned: number;
   createdAt: string;

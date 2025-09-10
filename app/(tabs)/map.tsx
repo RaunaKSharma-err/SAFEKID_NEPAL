@@ -1,6 +1,7 @@
+import { useLocation } from "@/providers/LocationProvider";
 import { useReports } from "@/providers/ReportsProvider";
 import { MapPin, Navigation } from "lucide-react-native";
-import React from "react";
+import React, { useEffect, useRef } from "react";
 import {
   Dimensions,
   Platform,
@@ -10,38 +11,50 @@ import {
   Text,
   View,
 } from "react-native";
-import MapView, { Marker, PROVIDER_GOOGLE } from "react-native-maps";
-
-const getCoordinatesFromLocation = (location: string) => {
-  const locationMap: {
-    [key: string]: { latitude: number; longitude: number };
-  } = {
-    kathmandu: { latitude: 27.7172, longitude: 85.324 },
-    pokhara: { latitude: 28.2096, longitude: 83.9856 },
-    lalitpur: { latitude: 27.6588, longitude: 85.3247 },
-    bhaktapur: { latitude: 27.671, longitude: 85.4298 },
-    biratnagar: { latitude: 26.4525, longitude: 87.2718 },
-    birgunj: { latitude: 27.0104, longitude: 84.8803 },
-    dharan: { latitude: 26.8147, longitude: 87.2798 },
-    butwal: { latitude: 27.7, longitude: 83.4486 },
-    hetauda: { latitude: 27.4287, longitude: 85.0326 },
-    nepalgunj: { latitude: 28.05, longitude: 81.6167 },
-  };
-
-  const normalizedLocation = location.toLowerCase();
-  for (const [key, coords] of Object.entries(locationMap)) {
-    if (normalizedLocation.includes(key)) {
-      return coords;
-    }
-  }
-
-  return { latitude: 27.7172, longitude: 85.324 };
-};
+import LeafletMap, { LeafletMapHandle } from "../../components/Map";
 
 export default function MapScreen() {
+  const mapRef = useRef<LeafletMapHandle>(null);
   const reportsContext = useReports();
+  const { getPlaceCoordinates } = useLocation();
   const { reports } = reportsContext || { reports: [] };
   const activeReports = reports.filter((report) => report.status === "active");
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const addMarkers = async () => {
+      for (const report of activeReports) {
+        // Last seen location
+        const lastSeenLocation = await getPlaceCoordinates(
+          report.lastSeenLocation
+        );
+        if (!lastSeenLocation) continue;
+
+        mapRef.current?.addMarker(
+          report.id,
+          lastSeenLocation.latitude,
+          lastSeenLocation.longitude,
+          `Last seen: ${report.childName}`
+        );
+
+        // Sightings
+        for (const sighting of report.sightings) {
+          const coords = await getPlaceCoordinates(sighting.location);
+          if (!coords) continue;
+
+          mapRef.current?.addMarker(
+            sighting.id,
+            coords.latitude,
+            coords.longitude,
+            `Sighting: ${report.childName}`
+          );
+        }
+      }
+    };
+
+    addMarkers();
+  }, [activeReports, mapRef,getPlaceCoordinates]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -62,48 +75,7 @@ export default function MapScreen() {
           </Text>
         </View>
       ) : (
-        <MapView
-          style={styles.map}
-          provider={PROVIDER_GOOGLE}
-          initialRegion={{
-            latitude: 27.7172,
-            longitude: 85.324,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          }}
-          showsUserLocation
-          showsMyLocationButton
-        >
-          {activeReports.map((report) => {
-            const coordinates = getCoordinatesFromLocation(
-              report.lastSeenLocation
-            );
-            return (
-              <Marker
-                key={report.id}
-                coordinate={coordinates}
-                title={report.childName}
-                description={`Last seen: ${report.lastSeenLocation}`}
-                pinColor="#FF6B6B"
-              />
-            );
-          })}
-
-          {activeReports.flatMap((report) =>
-            report.sightings.map((sighting) => {
-              const coordinates = getCoordinatesFromLocation(sighting.location);
-              return (
-                <Marker
-                  key={sighting.id}
-                  coordinate={coordinates}
-                  title={`Sighting: ${report.childName}`}
-                  description={sighting.location}
-                  pinColor="#4CAF50"
-                />
-              );
-            })
-          )}
-        </MapView>
+        <LeafletMap ref={mapRef} />
       )}
 
       <ScrollView style={styles.locationsList}>

@@ -1,4 +1,5 @@
 import { AuthProvider } from "@/providers/AuthProvider";
+import { LocationProvider } from "@/providers/LocationProvider";
 import { ReportsProvider } from "@/providers/ReportsProvider";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Stack } from "expo-router";
@@ -40,11 +41,13 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <GestureHandlerRootView style={{ flex: 1 }}>
-        <AuthProvider>
-          <ReportsProvider>
-            <RootLayoutNav />
-          </ReportsProvider>
-        </AuthProvider>
+        <LocationProvider>
+          <AuthProvider>
+            <ReportsProvider>
+              <RootLayoutNav />
+            </ReportsProvider>
+          </AuthProvider>
+        </LocationProvider>
       </GestureHandlerRootView>
     </QueryClientProvider>
   );

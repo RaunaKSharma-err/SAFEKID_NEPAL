@@ -1,11 +1,12 @@
 import { calculateFinalCost, getAreaCost } from "@/lib/payment";
 import { useAuth } from "@/providers/AuthProvider";
+import { useLocation } from "@/providers/LocationProvider";
 import { useReports } from "@/providers/ReportsProvider";
 import type { BroadcastArea } from "@/types/report";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { ArrowLeft, Camera, MapPin } from "lucide-react-native";
+import { ArrowLeft, Camera, MapPin, MapPinned } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -19,7 +20,14 @@ import {
   View,
 } from "react-native";
 
+type lastSeenType = {
+  latitude: number;
+  longitude: number;
+};
+
 export default function PostReportScreen() {
+  const [lastSeenCoordinates, setlastSeenCoordinates] =
+    useState<lastSeenType | null>(null);
   const [childName, setChildName] = useState("");
   const [childAge, setChildAge] = useState("");
   const [description, setDescription] = useState("");
@@ -28,6 +36,7 @@ export default function PostReportScreen() {
   const [broadcastArea, setBroadcastArea] = useState<BroadcastArea>("city");
   const [loading, setLoading] = useState(false);
 
+  const { currentLocation } = useLocation();
   const authContext = useAuth();
   const reportsContext = useReports();
 
@@ -44,7 +53,7 @@ export default function PostReportScreen() {
       aspect: [1, 1],
       quality: 0.8,
     });
-
+    
     if (!result.canceled) {
       setChildPhoto(result.assets[0].uri);
     }
@@ -80,6 +89,8 @@ export default function PostReportScreen() {
         childPhoto,
         description,
         lastSeenLocation,
+        latitude: lastSeenCoordinates?.latitude,
+        longitude: lastSeenCoordinates?.longitude,
         broadcastArea,
         cost: baseCost,
         status: "active" as const,
@@ -183,9 +194,20 @@ export default function PostReportScreen() {
                 style={styles.locationText}
                 value={lastSeenLocation}
                 onChangeText={setLastSeenLocation}
-                placeholder="Enter location details"
+                placeholder="eg: kathmandu , birgunj"
               />
             </View>
+            <TouchableOpacity
+              onPress={() => setlastSeenCoordinates(currentLocation)}
+              style={[styles.submitButton, loading && styles.disabledButton]}
+            >
+              <View style={styles.icon}>
+                <MapPinned color={"white"} size={22} />
+                <Text style={styles.submitButtonText}>
+                  Your Current Location
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.inputGroup}>
@@ -261,6 +283,7 @@ export default function PostReportScreen() {
 }
 
 const styles = StyleSheet.create({
+  icon: { flexDirection: "row", alignItems: "center", gap: 12 },
   container: {
     flex: 1,
     backgroundColor: "white",

@@ -145,6 +145,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
+    marginTop: 40,
   },
   headerSubtitle: {
     fontSize: 14,
@@ -158,6 +159,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 20,
     gap: 4,
+    marginTop: 40,
   },
   tokenText: {
     fontSize: 14,

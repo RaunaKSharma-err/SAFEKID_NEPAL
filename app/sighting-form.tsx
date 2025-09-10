@@ -1,9 +1,10 @@
 import { useAuth } from "@/providers/AuthProvider";
+import { useLocation } from "@/providers/LocationProvider";
 import { useReports } from "@/providers/ReportsProvider";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { ArrowLeft, Camera, MapPin } from "lucide-react-native";
+import { ArrowLeft, Camera, MapPin, MapPinned } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -17,17 +18,25 @@ import {
   View,
 } from "react-native";
 
+type lastSeenType = {
+  latitude: number;
+  longitude: number;
+};
+
 export default function SightingFormScreen() {
+  const [lastSeenCoordinates, setlastSeenCoordinates] =
+    useState<lastSeenType | null>(null);
   const [selectedReportId, setSelectedReportId] = useState("");
   const [photo, setPhoto] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const { currentLocation } = useLocation();
   const authContext = useAuth();
   const reportsContext = useReports();
 
-  const { user } = authContext || { user: null };
+  const { user, updateTokens } = authContext || { user: null };
   const { reports, addSighting } = reportsContext || {
     reports: [],
     addSighting: async () => ({}),
@@ -67,8 +76,12 @@ export default function SightingFormScreen() {
         photo,
         description,
         location,
+        coordinates: {
+          latitude: lastSeenCoordinates?.latitude,
+          longitude: lastSeenCoordinates?.longitude,
+        },
       });
-
+      updateTokens(user.tokens + 10);
       Alert.alert(
         "Success",
         "Thank you for your sighting report! You earned 10 tokens.",
@@ -153,7 +166,7 @@ export default function SightingFormScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Location *</Text>
+            <Text style={styles.label}>Last Seen Location *</Text>
             <View style={styles.locationInput}>
               <MapPin size={20} color="#666" />
               <TextInput
@@ -163,6 +176,17 @@ export default function SightingFormScreen() {
                 placeholder="Where did you see them?"
               />
             </View>
+            <TouchableOpacity
+              onPress={() => setlastSeenCoordinates(currentLocation)}
+              style={[styles.submitButton, loading && styles.disabledButton]}
+            >
+              <View style={styles.icon}>
+                <MapPinned color={"white"} size={22} />
+                <Text style={styles.submitButtonText}>
+                  Your Current Location
+                </Text>
+              </View>
+            </TouchableOpacity>
           </View>
 
           <View style={styles.rewardInfo}>
@@ -191,6 +215,7 @@ export default function SightingFormScreen() {
 }
 
 const styles = StyleSheet.create({
+  icon: { flexDirection: "row", alignItems: "center", gap: 12 },
   container: {
     flex: 1,
     backgroundColor: "white",
