@@ -30,6 +30,7 @@ export default function PostReportScreen() {
     useState<lastSeenType | null>(null);
   const [childName, setChildName] = useState("");
   const [childAge, setChildAge] = useState("");
+  const [islocated, setIsLocated] = useState(false);
   const [description, setDescription] = useState("");
   const [lastSeenLocation, setLastSeenLocation] = useState("");
   const [childPhoto, setChildPhoto] = useState("");
@@ -53,7 +54,7 @@ export default function PostReportScreen() {
       aspect: [1, 1],
       quality: 0.8,
     });
-    
+
     if (!result.canceled) {
       setChildPhoto(result.assets[0].uri);
     }
@@ -64,13 +65,11 @@ export default function PostReportScreen() {
   const finalCost = calculateFinalCost(baseCost, tokensToUse);
 
   const handleSubmit = async () => {
-    if (
-      !childName ||
-      !childAge ||
-      !description ||
-      !lastSeenLocation ||
-      !childPhoto
-    ) {
+    if (!childName || !childAge || !description || !childPhoto) {
+      Alert.alert("Error", "Please fill in all fields and add a photo");
+      return;
+    }
+    if (!lastSeenLocation && !lastSeenCoordinates) {
       Alert.alert("Error", "Please fill in all fields and add a photo");
       return;
     }
@@ -118,6 +117,19 @@ export default function PostReportScreen() {
     } catch (error) {
       console.error("Failed to create report:", error);
       Alert.alert("Error", "Failed to post report. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCurrentLocation = async () => {
+    setLoading(true);
+    if (!currentLocation) return;
+    try {
+      setlastSeenCoordinates(currentLocation);
+      setIsLocated(true);
+    } catch (error) {
+      console.log("Error while getting current Location", error);
     } finally {
       setLoading(false);
     }
@@ -194,17 +206,29 @@ export default function PostReportScreen() {
                 style={styles.locationText}
                 value={lastSeenLocation}
                 onChangeText={setLastSeenLocation}
-                placeholder="eg: kathmandu , birgunj"
+                placeholder={
+                  islocated ? "Got your location" : "eg: kathmandu , birgunj"
+                }
               />
             </View>
             <TouchableOpacity
-              onPress={() => setlastSeenCoordinates(currentLocation)}
+              onPress={handleCurrentLocation}
               style={[styles.submitButton, loading && styles.disabledButton]}
             >
               <View style={styles.icon}>
-                <MapPinned color={"white"} size={22} />
                 <Text style={styles.submitButtonText}>
-                  Your Current Location
+                  {loading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <View style={styles.icon}>
+                      <MapPinned color={"white"} size={22} />
+                      <Text style={styles.submitButtonText}>
+                        {islocated
+                          ? "Got your location"
+                          : "Your Current Location"}
+                      </Text>
+                    </View>
+                  )}
                 </Text>
               </View>
             </TouchableOpacity>

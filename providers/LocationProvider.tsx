@@ -1,7 +1,6 @@
 // LocationProvider.tsx
+import * as Location from "expo-location";
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { PermissionsAndroid, Platform } from "react-native";
-import Geolocation from "react-native-geolocation-service";
 
 type Coordinates = { latitude: number; longitude: number } | null;
 
@@ -15,6 +14,8 @@ const LocationContext = createContext<LocationContextType>({
   getPlaceCoordinates: async () => null,
 });
 
+const cache = new Map<string, Coordinates>();
+
 export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -22,44 +23,50 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Get current device location
   useEffect(() => {
-    const requestPermissionAndGetLocation = async () => {
-      if (Platform.OS === "android") {
-        const granted = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION
-        );
-        if (granted !== PermissionsAndroid.RESULTS.GRANTED) return;
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        console.warn("Permission to access location was denied");
+        return;
       }
 
-      Geolocation.getCurrentPosition(
-        (position) => {
-          setCurrentLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude,
-          });
-        },
-        (error) => console.error("Geolocation error:", error),
-        { enableHighAccuracy: true, timeout: 15000, maximumAge: 10000 }
-      );
-    };
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
 
-    requestPermissionAndGetLocation();
+      setCurrentLocation({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+      });
+    })();
   }, []);
 
-  // Get coordinates from a place name using OpenStreetMap Nominatim
+  // Get coordinates from a place name (OpenWeatherMap API)
   const getPlaceCoordinates = async (place: string): Promise<Coordinates> => {
+    if (!place) return null;
+
+    if (cache.has(place.toLowerCase())) {
+      return cache.get(place.toLowerCase())!;
+    }
+
     try {
       const response = await fetch(
-        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(
+        `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(
           place
-        )}`
+        )}&limit=1&appid=1e02dc5e630c241114c0a27b793012d7`
       );
+
       const data = await response.json();
+
       if (!data || data.length === 0) return null;
 
-      return {
+      const coords: Coordinates = {
         latitude: parseFloat(data[0].lat),
         longitude: parseFloat(data[0].lon),
       };
+
+      cache.set(place.toLowerCase(), coords);
+      return coords;
     } catch (err) {
       console.error("Error fetching place coordinates:", err);
       return null;
@@ -73,5 +80,4 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-// Hook for easy access
 export const useLocation = () => useContext(LocationContext);

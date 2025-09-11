@@ -1,7 +1,7 @@
 import { useLocation } from "@/providers/LocationProvider";
 import { useReports } from "@/providers/ReportsProvider";
 import { MapPin, Navigation } from "lucide-react-native";
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
   Platform,
@@ -9,11 +9,25 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
 } from "react-native";
 import LeafletMap, { LeafletMapHandle } from "../../components/Map";
 
+type locationType = {
+  latitude: number;
+  longitude: number;
+};
+
+type ReportCoords = {
+  lastSeen?: locationType;
+  sightings: Record<string, locationType>; // keyed by sighting.id
+};
+
 export default function MapScreen() {
+  const [reportCoords, setReportCoords] = useState<
+    Record<string, ReportCoords>
+  >({});
   const mapRef = useRef<LeafletMapHandle>(null);
   const reportsContext = useReports();
   const { getPlaceCoordinates } = useLocation();
@@ -24,24 +38,33 @@ export default function MapScreen() {
     if (!mapRef.current) return;
 
     const addMarkers = async () => {
+      const coordsMap: Record<string, ReportCoords> = {};
+
       for (const report of activeReports) {
+        // Initialize storage
+        coordsMap[report.id] = { sightings: {} };
+
         // Last seen location
         const lastSeenLocation = await getPlaceCoordinates(
           report.lastSeenLocation
         );
-        if (!lastSeenLocation) continue;
+        if (lastSeenLocation) {
+          coordsMap[report.id].lastSeen = lastSeenLocation;
 
-        mapRef.current?.addMarker(
-          report.id,
-          lastSeenLocation.latitude,
-          lastSeenLocation.longitude,
-          `Last seen: ${report.childName}`
-        );
+          mapRef.current?.addMarker(
+            report.id,
+            lastSeenLocation.latitude,
+            lastSeenLocation.longitude,
+            `Last seen: ${report.childName}`
+          );
+        }
 
         // Sightings
         for (const sighting of report.sightings) {
           const coords = await getPlaceCoordinates(sighting.location);
           if (!coords) continue;
+
+          coordsMap[report.id].sightings[sighting.id] = coords;
 
           mapRef.current?.addMarker(
             sighting.id,
@@ -51,10 +74,12 @@ export default function MapScreen() {
           );
         }
       }
+
+      setReportCoords(coordsMap);
     };
 
     addMarkers();
-  }, [activeReports, mapRef,getPlaceCoordinates]);
+  }, [activeReports, getPlaceCoordinates]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -82,7 +107,21 @@ export default function MapScreen() {
         <Text style={styles.listTitle}>Recent Locations</Text>
 
         {activeReports.map((report) => (
-          <View key={report.id} style={styles.locationCard}>
+          <TouchableOpacity
+            key={report.id}
+            style={styles.locationCard}
+            onPress={() => {
+              const coords = reportCoords[report.id]?.lastSeen;
+              if (!coords) return;
+
+              mapRef.current?.moveMarker(
+                report.id,
+                coords.latitude,
+                coords.longitude,
+                `Last seen: ${report.childName}`
+              );
+            }}
+          >
             <View style={styles.locationHeader}>
               <MapPin size={20} color="#FF6B6B" />
               <Text style={styles.childName}>{report.childName}</Text>
@@ -104,7 +143,7 @@ export default function MapScreen() {
                 ))}
               </View>
             )}
-          </View>
+          </TouchableOpacity>
         ))}
       </ScrollView>
     </SafeAreaView>
@@ -115,6 +154,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
+    paddingTop:30,
   },
   header: {
     padding: 16,

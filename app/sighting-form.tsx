@@ -1,7 +1,6 @@
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "@/providers/LocationProvider";
 import { useReports } from "@/providers/ReportsProvider";
-import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { ArrowLeft, Camera, MapPin, MapPinned } from "lucide-react-native";
@@ -9,6 +8,7 @@ import React, { useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Image,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -25,14 +25,15 @@ type lastSeenType = {
 
 export default function SightingFormScreen() {
   const [lastSeenCoordinates, setlastSeenCoordinates] =
-    useState<lastSeenType | null>(null);
+    useState<lastSeenType>();
   const [selectedReportId, setSelectedReportId] = useState("");
   const [photo, setPhoto] = useState("");
   const [description, setDescription] = useState("");
   const [location, setLocation] = useState("");
+  const [IsLocated, setIsLocated] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const { currentLocation } = useLocation();
+  const { currentLocation, getPlaceCoordinates } = useLocation();
   const authContext = useAuth();
   const reportsContext = useReports();
 
@@ -57,9 +58,26 @@ export default function SightingFormScreen() {
     }
   };
 
+  const handleCurrentLocation = async () => {
+    setLoading(true);
+    if (!currentLocation) return;
+    try {
+      setlastSeenCoordinates(currentLocation);
+      setIsLocated(true);
+    } catch (error) {
+      console.log("Error while getting current Location", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!selectedReportId || !description || !location) {
+    if (!selectedReportId || !description) {
       Alert.alert("Error", "Please fill in all required fields");
+      return;
+    }
+    if (!location && !lastSeenCoordinates) {
+      Alert.alert("Error", "Please fill in all fields and add a photo");
       return;
     }
 
@@ -68,6 +86,26 @@ export default function SightingFormScreen() {
     setLoading(true);
 
     try {
+      let coords: lastSeenType | undefined;
+
+      if (lastSeenCoordinates) {
+        coords = lastSeenCoordinates;
+      }
+      // If user typed a location manually
+      else if (location) {
+        const fetchedCoords = await getPlaceCoordinates(location);
+        if (fetchedCoords) coords = fetchedCoords;
+      }
+
+      if (!coords) {
+        Alert.alert(
+          "Error",
+          "Could not determine coordinates for this location."
+        );
+        setLoading(false);
+        return;
+      }
+
       await addSighting(selectedReportId, {
         reportId: selectedReportId,
         submitterId: user.id,
@@ -76,11 +114,9 @@ export default function SightingFormScreen() {
         photo,
         description,
         location,
-        coordinates: {
-          latitude: lastSeenCoordinates?.latitude,
-          longitude: lastSeenCoordinates?.longitude,
-        },
+        coordinates: coords,
       });
+
       updateTokens(user.tokens + 10);
       Alert.alert(
         "Success",
@@ -126,7 +162,7 @@ export default function SightingFormScreen() {
                   <Image
                     source={{ uri: report.childPhoto }}
                     style={styles.reportPhoto}
-                    contentFit="cover"
+                    resizeMode="cover"
                   />
                   <Text style={styles.reportName}>{report.childName}</Text>
                   <Text style={styles.reportAge}>Age {report.childAge}</Text>
@@ -134,7 +170,6 @@ export default function SightingFormScreen() {
               ))}
             </ScrollView>
           </View>
-
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Photo (Optional)</Text>
             <TouchableOpacity style={styles.photoButton} onPress={pickImage}>
@@ -142,7 +177,7 @@ export default function SightingFormScreen() {
                 <Image
                   source={{ uri: photo }}
                   style={styles.photo}
-                  contentFit="cover"
+                  resizeMode="cover"
                 />
               ) : (
                 <View style={styles.photoPlaceholder}>
@@ -152,7 +187,6 @@ export default function SightingFormScreen() {
               )}
             </TouchableOpacity>
           </View>
-
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Description *</Text>
             <TextInput
@@ -164,31 +198,43 @@ export default function SightingFormScreen() {
               numberOfLines={4}
             />
           </View>
-
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>Last Seen Location *</Text>
+            <Text style={styles.label}>Location *</Text>
             <View style={styles.locationInput}>
               <MapPin size={20} color="#666" />
               <TextInput
                 style={styles.locationText}
                 value={location}
                 onChangeText={setLocation}
-                placeholder="Where did you see them?"
+                placeholder={
+                  IsLocated ? "Got your location" : " Where did you see them?"
+                }
               />
             </View>
             <TouchableOpacity
-              onPress={() => setlastSeenCoordinates(currentLocation)}
+              onPress={handleCurrentLocation}
               style={[styles.submitButton, loading && styles.disabledButton]}
             >
               <View style={styles.icon}>
-                <MapPinned color={"white"} size={22} />
                 <Text style={styles.submitButtonText}>
-                  Your Current Location
+                  {loading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <View style={styles.icon}>
+                      <MapPinned color={"white"} size={22} />
+                      <Text style={styles.submitButtonText}>
+                        {IsLocated
+                          ? "Got your location"
+                          : "Your Current Location"
+                          }
+                      </Text>
+                    </View>
+                  )}
                 </Text>
               </View>
             </TouchableOpacity>
           </View>
-
+          {/* Reward info & submit button remain the same */}
           <View style={styles.rewardInfo}>
             <Text style={styles.rewardTitle}>Earn 10 Tokens</Text>
             <Text style={styles.rewardText}>
@@ -196,7 +242,6 @@ export default function SightingFormScreen() {
               rewards if the child is found!
             </Text>
           </View>
-
           <TouchableOpacity
             style={[styles.submitButton, loading && styles.disabledButton]}
             onPress={handleSubmit}
@@ -213,7 +258,6 @@ export default function SightingFormScreen() {
     </SafeAreaView>
   );
 }
-
 const styles = StyleSheet.create({
   icon: { flexDirection: "row", alignItems: "center", gap: 12 },
   container: {

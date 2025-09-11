@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import "dotenv/config";
 
 export default {
   expo: {
@@ -16,29 +16,28 @@ export default {
       backgroundColor: "#ffffff",
     },
     ios: {
-      config: {
-        googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY,
-      },
       supportsTablet: true,
-      bundleIdentifier: "app.rork.safekid-nepal",
+      bundleIdentifier: "app.safekid-nepal",
       infoPlist: {
-        NSPhotoLibraryUsageDescription: "Allow $(PRODUCT_NAME) to access your photos",
+        NSPhotoLibraryUsageDescription:
+          "Allow $(PRODUCT_NAME) to access your photos",
         NSCameraUsageDescription: "Allow $(PRODUCT_NAME) to access your camera",
-        NSMicrophoneUsageDescription: "Allow $(PRODUCT_NAME) to access your microphone",
+        NSMicrophoneUsageDescription:
+          "Allow $(PRODUCT_NAME) to access your microphone",
       },
     },
     android: {
-      config: {
-        googleMaps: {
-          apiKey: process.env.GOOGLE_MAPS_API_KEY,
-        },
-      },
       adaptiveIcon: {
         foregroundImage: "./assets/images/adaptive-icon.png",
         backgroundColor: "#ffffff",
       },
       package: "app.rork.safekid-nepal",
-      permissions: ["CAMERA", "READ_EXTERNAL_STORAGE", "WRITE_EXTERNAL_STORAGE"],
+      permissions: [
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE",
+        "ACCESS_FINE_LOCATION",
+      ],
     },
     web: {
       favicon: "./assets/images/favicon.png",
@@ -48,7 +47,8 @@ export default {
       [
         "expo-image-picker",
         {
-          photosPermission: "The app accesses your photos to let you share them with your friends.",
+          photosPermission:
+            "The app accesses your photos to let you share them with your friends.",
         },
       ],
       "expo-asset",

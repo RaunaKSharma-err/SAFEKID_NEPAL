@@ -43,6 +43,7 @@ export default function FeedScreen() {
           </View>
         )}
       </View>
+      {/* <Try /> */}
 
       <ScrollView
         style={styles.content}
