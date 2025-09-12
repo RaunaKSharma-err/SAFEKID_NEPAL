@@ -1,25 +1,28 @@
+import { useAuth } from "@/providers/AuthProvider";
 import { router } from "expo-router";
-import React, { useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { useEffect } from "react";
+import { ActivityIndicator, Text, View } from "react-native";
 
-const Index = () => {
-  const [first, setfirst] = useState(false);
-  if (!first) {
-    router.replace("/(auth)/signin");
+export default function Index() {
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (!user) {
+      router.replace("/(auth)/signin");
+    }
+  }, [user]);
+
+  if (!user) {
+    return (
+      <View>
+        <ActivityIndicator size={24} />
+      </View>
+    );
   }
+
   return (
-    <View style={styles.container}>
-      <Text>Aaradhya</Text>
+    <View>
+      <Text>Welcome, {user.name}</Text>
     </View>
   );
-};
-
-export default Index;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
+}

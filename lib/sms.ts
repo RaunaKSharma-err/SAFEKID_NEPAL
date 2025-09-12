@@ -23,14 +23,19 @@ export const sendSMSAlert = async (phone: string, message: string) => {
 };
 
 export const broadcastAlert = async (report: any, area: string) => {
-  const message = `MISSING CHILD ALERT: ${report.childName}, Age ${report.childAge}, last seen at ${report.lastSeenLocation}. Contact: ${report.parentPhone}. Help us find them! - SafeKid Nepal`;
+  const message = `MISSING CHILD ALERT: ${report.childName}, Age ${report.childAge}, last seen at ${report.lastSeenLocation}. Contact: ${report.parentPhone}. Photo: https://bit.ly/${report.childName}  . Help us find them! - SafeKid Nepal`;
   
   const mockPhones = [
-    '9841111111',
-    '9842222222', 
-    '9843333333',
-    '9844444444',
-    '9845555555'
+    '9841184511',
+    '9841258222', 
+    '9843964733',
+    '9842245444',
+    '9845349525',
+    '9843695111',
+    '9842224592', 
+    '9843334593',
+    '9844459844',
+    '9845336455',
   ];
 
   console.log(`Broadcasting to ${area} area:`, message);

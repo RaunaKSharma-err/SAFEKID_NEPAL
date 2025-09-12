@@ -12,8 +12,8 @@ export interface MissingChildReport {
   description: string;
   lastSeenLocation: string;
   lastSeenCoordinates?: {
-    latitude: number;
-    longitude: number;
+    latitude: number | undefined;
+    longitude: number | undefined;
   };
   broadcastArea: BroadcastArea;
   cost: number;

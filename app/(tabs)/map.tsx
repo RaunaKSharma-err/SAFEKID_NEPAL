@@ -61,17 +61,31 @@ export default function MapScreen() {
 
         // Sightings
         for (const sighting of report.sightings) {
-          const coords = await getPlaceCoordinates(sighting.location);
-          if (!coords) continue;
+          if (!sighting.coordinates) {
+            const coords = await getPlaceCoordinates(sighting.location);
+            if (!coords) continue;
 
-          coordsMap[report.id].sightings[sighting.id] = coords;
+            coordsMap[report.id].sightings[sighting.id] = coords;
 
-          mapRef.current?.addMarker(
-            sighting.id,
-            coords.latitude,
-            coords.longitude,
-            `Sighting: ${report.childName}`
-          );
+            mapRef.current?.addMarker(
+              sighting.id,
+              coords.latitude,
+              coords.longitude,
+              `Sighting: ${report.childName}`
+            );
+          } else {
+            const coords = sighting.coordinates;
+            if (!coords) continue;
+
+            coordsMap[report.id].sightings[sighting.id] = coords;
+
+            mapRef.current?.addMarker(
+              sighting.id,
+              coords.latitude,
+              coords.longitude,
+              `Sighting: ${report.childName}`
+            );
+          }
         }
       }
 
@@ -103,22 +117,35 @@ export default function MapScreen() {
         <LeafletMap ref={mapRef} />
       )}
 
+      <Text style={styles.listTitle}>Recent Locations</Text>
       <ScrollView style={styles.locationsList}>
-        <Text style={styles.listTitle}>Recent Locations</Text>
-
         {activeReports.map((report) => (
           <TouchableOpacity
             key={report.id}
             style={styles.locationCard}
             onPress={() => {
-              const coords = reportCoords[report.id]?.lastSeen;
+              let coords: locationType | undefined;
+
+              // Prefer last sighting if available
+              const sightings = reportCoords[report.id]?.sightings;
+              if (sightings && report.sightings.length > 0) {
+                const lastSighting =
+                  report.sightings[report.sightings.length - 1];
+                coords = sightings[lastSighting.id];
+              }
+
+              // Otherwise, fallback to lastSeen
+              if (!coords) {
+                coords = reportCoords[report.id]?.lastSeen;
+              }
+
               if (!coords) return;
 
               mapRef.current?.moveMarker(
                 report.id,
                 coords.latitude,
                 coords.longitude,
-                `Last seen: ${report.childName}`
+                `Tracking: ${report.childName}`
               );
             }}
           >
@@ -129,7 +156,16 @@ export default function MapScreen() {
 
             <View style={styles.locationInfo}>
               <Text style={styles.locationLabel}>Last seen:</Text>
-              <Text style={styles.locationText}>{report.lastSeenLocation}</Text>
+              <Text style={styles.locationText}>
+                {report.lastSeenLocation ? (
+                  report.lastSeenLocation
+                ) : (
+                  <>
+                    Lat :{report.lastSeenCoordinates?.latitude} , Lng :
+                    {report.lastSeenCoordinates?.longitude}
+                  </>
+                )}
+              </Text>
             </View>
 
             {report.sightings.length > 0 && (
@@ -138,7 +174,16 @@ export default function MapScreen() {
                 {report.sightings.slice(0, 2).map((sighting) => (
                   <View key={sighting.id} style={styles.sightingItem}>
                     <Navigation size={14} color="#666" />
-                    <Text style={styles.sightingText}>{sighting.location}</Text>
+                    <Text style={styles.sightingText}>
+                      {sighting.location ? (
+                        sighting.location
+                      ) : (
+                        <>
+                          Lat :{sighting.coordinates?.latitude} , Lng :
+                          {sighting.coordinates?.longitude}
+                        </>
+                      )}
+                    </Text>
                   </View>
                 ))}
               </View>
@@ -154,7 +199,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f8f9fa",
-    paddingTop:30,
   },
   header: {
     padding: 16,
@@ -166,6 +210,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "bold",
     color: "#333",
+    marginTop: 35,
   },
   headerSubtitle: {
     fontSize: 14,
@@ -210,7 +255,8 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
-    marginBottom: 16,
+    marginTop: 16,
+    marginLeft: 10,
   },
   locationCard: {
     backgroundColor: "white",

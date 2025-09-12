@@ -43,7 +43,7 @@ export default function AdminScreen() {
       ) : (
         <>
           <View style={styles.header}>
-            <TouchableOpacity onPress={() => router.back()}>
+            <TouchableOpacity onPress={() => router.replace("/(tabs)/profile")}>
               <ArrowLeft size={24} color="#333" />
             </TouchableOpacity>
             <Text style={styles.title}>Admin Panel</Text>
@@ -143,6 +143,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     padding: 16,
+    paddingTop: 50,
     backgroundColor: "white",
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",

@@ -1,4 +1,3 @@
-// LocationProvider.tsx
 import * as Location from "expo-location";
 import React, { createContext, useContext, useEffect, useState } from "react";
 
@@ -7,11 +6,13 @@ type Coordinates = { latitude: number; longitude: number } | null;
 interface LocationContextType {
   currentLocation: Coordinates;
   getPlaceCoordinates: (place: string) => Promise<Coordinates>;
+  searchPlaces: (query: string, limit?: number) => Promise<any[]>; // 🔥 added
 }
 
 const LocationContext = createContext<LocationContextType>({
   currentLocation: null,
   getPlaceCoordinates: async () => null,
+  searchPlaces: async () => [],
 });
 
 const cache = new Map<string, Coordinates>();
@@ -41,7 +42,7 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({
     })();
   }, []);
 
-  // Get coordinates from a place name (OpenWeatherMap API)
+  // Get a single coordinate from a place name (OpenWeatherMap API)
   const getPlaceCoordinates = async (place: string): Promise<Coordinates> => {
     if (!place) return null;
 
@@ -57,7 +58,6 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       const data = await response.json();
-
       if (!data || data.length === 0) return null;
 
       const coords: Coordinates = {
@@ -73,8 +73,27 @@ export const LocationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  const searchPlaces = async (query: string, limit: number = 5) => {
+    if (!query || query.length < 2) return [];
+
+    try {
+      const response = await fetch(
+        `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(
+          query
+        )}&limit=${limit}&appid=1e02dc5e630c241114c0a27b793012d7`
+      );
+      const data = await response.json();
+      return data || [];
+    } catch (err) {
+      console.error("Error searching places:", err);
+      return [];
+    }
+  };
+
   return (
-    <LocationContext.Provider value={{ currentLocation, getPlaceCoordinates }}>
+    <LocationContext.Provider
+      value={{ currentLocation, getPlaceCoordinates, searchPlaces }}
+    >
       {children}
     </LocationContext.Provider>
   );

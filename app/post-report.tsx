@@ -7,7 +7,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { ArrowLeft, Camera, MapPin, MapPinned } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -36,8 +36,9 @@ export default function PostReportScreen() {
   const [childPhoto, setChildPhoto] = useState("");
   const [broadcastArea, setBroadcastArea] = useState<BroadcastArea>("city");
   const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
 
-  const { currentLocation } = useLocation();
+  const { currentLocation, searchPlaces, getPlaceCoordinates } = useLocation();
   const authContext = useAuth();
   const reportsContext = useReports();
 
@@ -88,8 +89,10 @@ export default function PostReportScreen() {
         childPhoto,
         description,
         lastSeenLocation,
-        latitude: lastSeenCoordinates?.latitude,
-        longitude: lastSeenCoordinates?.longitude,
+        lastSeenCoordinates: {
+          latitude: lastSeenCoordinates?.latitude,
+          longitude: lastSeenCoordinates?.longitude,
+        },
         broadcastArea,
         cost: baseCost,
         status: "active" as const,
@@ -124,15 +127,60 @@ export default function PostReportScreen() {
 
   const handleCurrentLocation = async () => {
     setLoading(true);
-    if (!currentLocation) return;
     try {
-      setlastSeenCoordinates(currentLocation);
+      let coords = currentLocation; // default: device location
+
+      // If the user typed a location in the search bar
+      if (lastSeenLocation && lastSeenLocation.trim() !== "") {
+        const places = await searchPlaces(lastSeenLocation); // fetch matching places
+        if (places.length > 0) {
+          coords = await getPlaceCoordinates(places[0].name);
+        }
+      }
+
+      if (!coords) throw new Error("Location not found");
+
+      setlastSeenCoordinates(coords); // update your state
       setIsLocated(true);
     } catch (error) {
-      console.log("Error while getting current Location", error);
+      console.error("Error while getting location:", error);
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    const handleChangeText = async () => {
+      if (lastSeenLocation.length < 2) {
+        setResults([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const places = await searchPlaces(lastSeenLocation, 5);
+        setResults(places);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    handleChangeText();
+  }, [lastSeenLocation, searchPlaces]);
+  // Called when a suggestion is selected
+  const handleSelectPlace = async (place: any) => {
+    const coords = await getPlaceCoordinates(place.name);
+    if (!coords) return;
+
+    setlastSeenCoordinates(coords);
+    setLastSeenLocation(
+      `${place.name}, ${place.state || ""}, ${place.country}`
+    );
+    setResults([]); // hide suggestions
+
+    // Optional: move marker if you have a mapRef
+    // mapRef.current?.moveMarker("selectedPlace", coords.latitude, coords.longitude, place.name);
   };
 
   return (
@@ -211,6 +259,22 @@ export default function PostReportScreen() {
                 }
               />
             </View>
+            {loading && <ActivityIndicator style={{ marginTop: 5 }} />}
+            {results.length > 0 && (
+              <View style={styles.suggestionsContainer}>
+                {results.map((item, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={styles.suggestionItem}
+                    onPress={() => handleSelectPlace(item)}
+                  >
+                    <Text style={styles.suggestionText}>
+                      {item.name}, {item.state || ""}, {item.country}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
             <TouchableOpacity
               onPress={handleCurrentLocation}
               style={[styles.submitButton, loading && styles.disabledButton]}
@@ -311,6 +375,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "white",
+  },
+  suggestionsContainer: {
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    marginTop: 5,
+    maxHeight: 200,
+  },
+  suggestionItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: "#333",
   },
   header: {
     flexDirection: "row",
