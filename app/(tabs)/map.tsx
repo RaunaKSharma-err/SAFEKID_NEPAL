@@ -93,7 +93,7 @@ export default function MapScreen() {
     };
 
     addMarkers();
-  }, [activeReports, getPlaceCoordinates]);
+  }, [activeReports, getPlaceCoordinates, reports]);
 
   return (
     <SafeAreaView style={styles.container}>

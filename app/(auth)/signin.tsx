@@ -120,6 +120,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
+    marginTop:50,
   },
   content: {
     flex: 1,

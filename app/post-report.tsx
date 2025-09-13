@@ -177,11 +177,8 @@ export default function PostReportScreen() {
     setLastSeenLocation(
       `${place.name}, ${place.state || ""}, ${place.country}`
     );
-    setResults([]); // hide suggestions
-
-    // Optional: move marker if you have a mapRef
-    // mapRef.current?.moveMarker("selectedPlace", coords.latitude, coords.longitude, place.name);
-  };
+    setResults([]);
+    };
 
   return (
     <SafeAreaView style={styles.container}>

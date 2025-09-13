@@ -4,7 +4,7 @@ import { useReports } from "@/providers/ReportsProvider";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import { ArrowLeft, Camera, MapPin, MapPinned } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -32,8 +32,9 @@ export default function SightingFormScreen() {
   const [location, setLocation] = useState("");
   const [IsLocated, setIsLocated] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<any[]>([]);
 
-  const { currentLocation, getPlaceCoordinates } = useLocation();
+  const { currentLocation, searchPlaces, getPlaceCoordinates } = useLocation();
   const authContext = useAuth();
   const reportsContext = useReports();
 
@@ -55,19 +56,6 @@ export default function SightingFormScreen() {
 
     if (!result.canceled) {
       setPhoto(result.assets[0].uri);
-    }
-  };
-
-  const handleCurrentLocation = async () => {
-    setLoading(true);
-    if (!currentLocation) return;
-    try {
-      setlastSeenCoordinates(currentLocation);
-      setIsLocated(true);
-    } catch (error) {
-      console.log("Error while getting current Location", error);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -129,6 +117,59 @@ export default function SightingFormScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCurrentLocation = async () => {
+    setLoading(true);
+    try {
+      let coords = currentLocation; // default: device location
+
+      // If the user typed a location in the search bar
+      if (location && location.trim() !== "") {
+        const places = await searchPlaces(location); // fetch matching places
+        if (places.length > 0) {
+          coords = await getPlaceCoordinates(places[0].name);
+        }
+      }
+
+      if (!coords) throw new Error("Location not found");
+
+      setlastSeenCoordinates(coords); // update your state
+      setIsLocated(true);
+    } catch (error) {
+      console.error("Error while getting location:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const handleChangeText = async () => {
+      if (location.length < 2) {
+        setResults([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const places = await searchPlaces(location, 5);
+        setResults(places);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    handleChangeText();
+  }, [location, searchPlaces]);
+  // Called when a suggestion is selected
+  const handleSelectPlace = async (place: any) => {
+    const coords = await getPlaceCoordinates(place.name);
+    if (!coords) return;
+
+    setlastSeenCoordinates(coords);
+    setLocation(`${place.name}, ${place.state || ""}, ${place.country}`);
+    setResults([]);
   };
 
   return (
@@ -211,6 +252,22 @@ export default function SightingFormScreen() {
                 }
               />
             </View>
+            {loading && <ActivityIndicator style={{ marginTop: 5 }} />}
+            {results.length > 0 && (
+              <View style={styles.suggestionsContainer}>
+                {results.map((item, idx) => (
+                  <TouchableOpacity
+                    key={idx}
+                    style={styles.suggestionItem}
+                    onPress={() => handleSelectPlace(item)}
+                  >
+                    <Text style={styles.suggestionText}>
+                      {item.name}, {item.state || ""}, {item.country}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
             <TouchableOpacity
               onPress={handleCurrentLocation}
               style={[styles.submitButton, loading && styles.disabledButton]}
@@ -225,8 +282,7 @@ export default function SightingFormScreen() {
                       <Text style={styles.submitButtonText}>
                         {IsLocated
                           ? "Got your location"
-                          : "Your Current Location"
-                          }
+                          : "Your Current Location"}
                       </Text>
                     </View>
                   )}
@@ -271,6 +327,23 @@ const styles = StyleSheet.create({
     padding: 16,
     borderBottomWidth: 1,
     borderBottomColor: "#f0f0f0",
+  },
+  suggestionsContainer: {
+    backgroundColor: "white",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    marginTop: 5,
+    maxHeight: 200,
+  },
+  suggestionItem: {
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  suggestionText: {
+    fontSize: 14,
+    color: "#333",
   },
   title: {
     fontSize: 18,
