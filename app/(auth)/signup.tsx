@@ -1,39 +1,40 @@
-import { router } from 'expo-router';
-import { ArrowLeft, User, Phone, Lock } from 'lucide-react-native';
-import React, { useState } from 'react';
+import { useAuth } from "@/providers/AuthProvider";
+import type { UserRole } from "@/types/auth";
+import { router } from "expo-router";
+import { ArrowLeft, Lock, Mail, Phone, User } from "lucide-react-native";
+import React, { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  SafeAreaView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  Alert,
-  ActivityIndicator,
-} from 'react-native';
-import { useAuth } from '@/providers/AuthProvider';
-import type { UserRole } from '@/types/auth';
+  View,
+} from "react-native";
 
 export default function SignUpScreen() {
-  const [name, setName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [role, setRole] = useState<UserRole>('parent');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<UserRole>("parent");
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
 
   const handleSignUp = async () => {
-    if (!name || !phone || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!name || !phone || !password || !email) {
+      Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     setLoading(true);
-    const result = await signUp(phone, name, role, password);
+    const result = await signUp(email, phone, name, role, password);
     setLoading(false);
 
     if (!result.success) {
-      Alert.alert('Error', result.error || 'Failed to create account');
+      Alert.alert("Error", result.error || "Failed to create account");
     }
   };
 
@@ -59,6 +60,17 @@ export default function SignUpScreen() {
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Mail size={20} color="#666" />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
             />
           </View>
 
@@ -89,18 +101,34 @@ export default function SignUpScreen() {
             <Text style={styles.roleLabel}>I am a:</Text>
             <View style={styles.roleButtons}>
               <TouchableOpacity
-                style={[styles.roleButton, role === 'parent' && styles.activeRoleButton]}
-                onPress={() => setRole('parent')}
+                style={[
+                  styles.roleButton,
+                  role === "parent" && styles.activeRoleButton,
+                ]}
+                onPress={() => setRole("parent")}
               >
-                <Text style={[styles.roleButtonText, role === 'parent' && styles.activeRoleButtonText]}>
+                <Text
+                  style={[
+                    styles.roleButtonText,
+                    role === "parent" && styles.activeRoleButtonText,
+                  ]}
+                >
                   Parent/Guardian
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
-                style={[styles.roleButton, role === 'community' && styles.activeRoleButton]}
-                onPress={() => setRole('community')}
+                style={[
+                  styles.roleButton,
+                  role === "community" && styles.activeRoleButton,
+                ]}
+                onPress={() => setRole("community")}
               >
-                <Text style={[styles.roleButtonText, role === 'community' && styles.activeRoleButtonText]}>
+                <Text
+                  style={[
+                    styles.roleButtonText,
+                    role === "community" && styles.activeRoleButtonText,
+                  ]}
+                >
                   Community Member
                 </Text>
               </TouchableOpacity>
@@ -120,9 +148,10 @@ export default function SignUpScreen() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity onPress={() => router.push('/(auth)/signin')}>
+        <TouchableOpacity onPress={() => router.push("/(auth)/signin")}>
           <Text style={styles.linkText}>
-            Already have an account? <Text style={styles.linkHighlight}>Sign in</Text>
+            Already have an account?{" "}
+            <Text style={styles.linkHighlight}>Sign in</Text>
           </Text>
         </TouchableOpacity>
       </View>
@@ -133,21 +162,21 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: "white",
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: "#f0f0f0",
   },
   title: {
     fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
-     marginTop:50,
+    fontWeight: "600",
+    color: "#333",
+    marginTop: 50,
   },
   content: {
     flex: 1,
@@ -155,8 +184,8 @@ const styles = StyleSheet.create({
   },
   subtitle: {
     fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
+    color: "#666",
+    textAlign: "center",
     marginBottom: 32,
   },
   form: {
@@ -164,10 +193,10 @@ const styles = StyleSheet.create({
     marginBottom: 32,
   },
   inputContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 12,
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -176,18 +205,18 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontSize: 16,
-    color: '#333',
+    color: "#333",
   },
   roleContainer: {
     gap: 12,
   },
   roleLabel: {
     fontSize: 16,
-    fontWeight: '500',
-    color: '#333',
+    fontWeight: "500",
+    color: "#333",
   },
   roleButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   roleButton: {
@@ -196,26 +225,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ddd',
-    alignItems: 'center',
+    borderColor: "#ddd",
+    alignItems: "center",
   },
   activeRoleButton: {
-    backgroundColor: '#FF6B6B',
-    borderColor: '#FF6B6B',
+    backgroundColor: "#FF6B6B",
+    borderColor: "#FF6B6B",
   },
   roleButtonText: {
     fontSize: 14,
-    fontWeight: '500',
-    color: '#666',
+    fontWeight: "500",
+    color: "#666",
   },
   activeRoleButtonText: {
-    color: 'white',
+    color: "white",
   },
   signUpButton: {
-    backgroundColor: '#FF6B6B',
+    backgroundColor: "#FF6B6B",
     paddingVertical: 16,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 8,
   },
   disabledButton: {
@@ -223,16 +252,16 @@ const styles = StyleSheet.create({
   },
   signUpButtonText: {
     fontSize: 16,
-    fontWeight: '600',
-    color: 'white',
+    fontWeight: "600",
+    color: "white",
   },
   linkText: {
-    textAlign: 'center',
+    textAlign: "center",
     fontSize: 14,
-    color: '#666',
+    color: "#666",
   },
   linkHighlight: {
-    color: '#FF6B6B',
-    fontWeight: '600',
+    color: "#FF6B6B",
+    fontWeight: "600",
   },
 });
