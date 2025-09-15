@@ -1,6 +1,6 @@
 import { useAuth } from "@/providers/AuthProvider";
 import { router } from "expo-router";
-import { ArrowLeft, Lock, Phone } from "lucide-react-native";
+import { ArrowLeft, Lock, Mail } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   ActivityIndicator,
@@ -14,19 +14,19 @@ import {
 } from "react-native";
 
 export default function SignInScreen() {
-  const [phone, setPhone] = useState("");
+  const [email, setemail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
 
   const handleSignIn = async () => {
-    if (!phone || !password) {
+    if (!email || !password) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
 
     setLoading(true);
-    const result = await signIn(phone, password);
+    const result = await signIn(email, password);
     setLoading(false);
 
     if (!result.success) {
@@ -51,14 +51,12 @@ export default function SignInScreen() {
 
         <View style={styles.form}>
           <View style={styles.inputContainer}>
-            <Phone size={20} color="#666" />
+            <Mail size={20} color="#666" />
             <TextInput
               style={styles.input}
-              placeholder="Phone number"
-              value={phone}
-              onChangeText={setPhone}
-              keyboardType="phone-pad"
-              autoCapitalize="none"
+              placeholder="email"
+              value={email}
+              onChangeText={setemail}
             />
           </View>
 
@@ -120,7 +118,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     color: "#333",
-    marginTop:50,
+    marginTop: 50,
   },
   content: {
     flex: 1,

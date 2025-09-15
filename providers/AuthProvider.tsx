@@ -46,6 +46,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
     const profileUser: User = {
       id: data.id,
+      email: data.email,
       phone: data.phone,
       name: data.name,
       role: data.role,
@@ -64,13 +65,17 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
   };
 
   const signUp = useCallback(
-    async (phone: string, name: string, role: UserRole, password: string) => {
+    async (
+      email: string,
+      phone: string,
+      name: string,
+      role: UserRole,
+      password: string
+    ) => {
       try {
-        const generatedEmail = `${phone}@safekid.app`; // auto-email
-
         // Create auth user
         const { data, error } = await supabase.auth.signUp({
-          email: generatedEmail,
+          email,
           password,
         });
 
@@ -80,8 +85,9 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         if (!supabaseUser) throw new Error("No user returned from Supabase");
 
         // Store extra fields in your custom users table
-        const { error: dbError } = await supabase.from("users").insert({
+        await supabase.from("users").insert({
           id: supabaseUser.id,
+          email: email.trim().toLowerCase(),
           phone,
           name,
           role,
@@ -89,11 +95,10 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
           created_at: new Date().toISOString(),
         });
 
-        if (dbError) throw dbError;
-
         // Save locally
         const newUser: User = {
           id: supabaseUser.id,
+          email,
           phone,
           name,
           role,
@@ -115,12 +120,10 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     []
   );
 
-  const signIn = useCallback(async (phone: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
-      const generatedEmail = `${phone}@safekid.app`;
-
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: generatedEmail,
+        email,
         password,
       });
 
@@ -146,7 +149,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       return { success: true };
     } catch (error) {
       console.error("Sign in error:", error);
-      return { success: false, error: "Invalid phone or password" };
+      return { success: false, error: "Invalid email or password" };
     }
   }, []);
 
@@ -165,7 +168,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
     async (newTokens: number) => {
       if (user) {
         const { error } = await supabase
-          .from("profiles")
+          .from("users")
           .update({ tokens: newTokens })
           .eq("id", user.id);
 
