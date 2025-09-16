@@ -30,7 +30,7 @@ export default function SignUpScreen() {
     }
 
     setLoading(true);
-    const result = await signUp(email, phone, name, role, password);
+    const result = await signUp(name, email, phone, role, password);
     setLoading(false);
 
     if (!result.success) {

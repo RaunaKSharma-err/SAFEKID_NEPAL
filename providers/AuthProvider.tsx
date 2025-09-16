@@ -34,16 +34,56 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const fetchProfile = async (id: string) => {
     const { data, error } = await supabase
-      .from("profiles")
+      .from("users")
       .select("*")
       .eq("id", id)
       .single();
+
+    if (error && error.code === "PGRST116") {
+      // no row found → create fallback profile
+      const { data: authUser } = await supabase.auth.getUser();
+
+      if (authUser?.user) {
+        const fallback = {
+          id,
+          email: authUser.user.email ?? "",
+          phone: "",
+          name: "",
+          role: "parent", // or default role
+          tokens: 100,
+          created_at: new Date().toISOString(),
+        };
+
+        const { error: insertError } = await supabase
+          .from("users")
+          .insert(fallback);
+
+        if (!insertError) {
+          // Map DB shape to your User type
+          const profileUser: User = {
+            id: fallback.id,
+            email: fallback.email,
+            phone: fallback.phone,
+            name: fallback.name,
+            role: fallback.role as UserRole,
+            tokens: fallback.tokens,
+            createdAt: fallback.created_at, // ✅ camelCase for TS type
+          };
+
+          setUser(profileUser);
+          await AsyncStorage.setItem("user", JSON.stringify(profileUser));
+          router.replace("/(tabs)");
+          return;
+        }
+      }
+    }
 
     if (error) {
       console.error("Fetch profile error:", error);
       return;
     }
 
+    // normal flow
     const profileUser: User = {
       id: data.id,
       email: data.email,
@@ -66,14 +106,15 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
 
   const signUp = useCallback(
     async (
+      name: string,
       email: string,
       phone: string,
-      name: string,
       role: UserRole,
       password: string
     ) => {
+      console.log("Signing up with:", { email, password, phone, name, role });
+
       try {
-        // Create auth user
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -84,10 +125,9 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
         const supabaseUser = data.user;
         if (!supabaseUser) throw new Error("No user returned from Supabase");
 
-        // Store extra fields in your custom users table
-        await supabase.from("users").insert({
+        const { error: dbError } = await supabase.from("users").insert({
           id: supabaseUser.id,
-          email: email.trim().toLowerCase(),
+          email,
           phone,
           name,
           role,
@@ -95,7 +135,11 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
           created_at: new Date().toISOString(),
         });
 
-        // Save locally
+        if (dbError) {
+          console.error("DB insert error:", dbError);
+          throw dbError;
+        }
+
         const newUser: User = {
           id: supabaseUser.id,
           email,
@@ -132,7 +176,6 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       const supabaseUser = data.user;
       if (!supabaseUser) throw new Error("No user returned from Supabase");
 
-      // Load extra info from your users table
       const { data: userRow, error: dbError } = await supabase
         .from("users")
         .select("*")
