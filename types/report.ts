@@ -6,7 +6,7 @@ export interface MissingChildReport {
   parentId: string;
   parentName: string;
   parentPhone: string;
-  childName: string;
+  child_name: string;
   childAge: number;
   childPhoto: string;
   description: string;

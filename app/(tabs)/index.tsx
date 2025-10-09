@@ -21,6 +21,7 @@ export default function FeedScreen() {
 
   const { reports } = reportsContext || { reports: [] };
   const { user } = authContext || { user: null };
+  console.log("reports", reports[0].child_name);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -28,6 +29,7 @@ export default function FeedScreen() {
   };
 
   const activeReports = reports.filter((report) => report.status === "active");
+  console.log(activeReports);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -73,7 +75,7 @@ export default function FeedScreen() {
                 />
 
                 <View style={styles.reportInfo}>
-                  <Text style={styles.childName}>{report.childName}</Text>
+                  <Text style={styles.childName}>{report.child_name}</Text>
                   <Text style={styles.childAge}>Age: {report.childAge}</Text>
 
                   <View style={styles.locationContainer}>

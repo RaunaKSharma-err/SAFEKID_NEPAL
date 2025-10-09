@@ -205,7 +205,7 @@ export default function SightingFormScreen() {
                     style={styles.reportPhoto}
                     resizeMode="cover"
                   />
-                  <Text style={styles.reportName}>{report.childName}</Text>
+                  <Text style={styles.reportName}>{report.child_name}</Text>
                   <Text style={styles.reportAge}>Age {report.childAge}</Text>
                 </TouchableOpacity>
               ))}

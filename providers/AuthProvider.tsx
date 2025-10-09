@@ -112,7 +112,7 @@ export const [AuthProvider, useAuth] = createContextHook(() => {
       role: UserRole,
       password: string
     ) => {
-      console.log("Signing up with:", { email, password, phone, name, role });
+      console.log("Signing up with:", { name, email, phone, password, role });
 
       try {
         const { data, error } = await supabase.auth.signUp({

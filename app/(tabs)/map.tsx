@@ -55,7 +55,7 @@ export default function MapScreen() {
             report.id,
             lastSeenLocation.latitude,
             lastSeenLocation.longitude,
-            `Last seen: ${report.childName}`
+            `Last seen: ${report.child_name}`
           );
         }
 
@@ -71,7 +71,7 @@ export default function MapScreen() {
               sighting.id,
               coords.latitude,
               coords.longitude,
-              `Sighting: ${report.childName}`
+              `Sighting: ${report.child_name}`
             );
           } else {
             const coords = sighting.coordinates;
@@ -83,7 +83,7 @@ export default function MapScreen() {
               sighting.id,
               coords.latitude,
               coords.longitude,
-              `Sighting: ${report.childName}`
+              `Sighting: ${report.child_name}`
             );
           }
         }
@@ -145,13 +145,13 @@ export default function MapScreen() {
                 report.id,
                 coords.latitude,
                 coords.longitude,
-                `Tracking: ${report.childName}`
+                `Tracking: ${report.child_name}`
               );
             }}
           >
             <View style={styles.locationHeader}>
               <MapPin size={20} color="#FF6B6B" />
-              <Text style={styles.childName}>{report.childName}</Text>
+              <Text style={styles.child_name}>{report.child_name}</Text>
             </View>
 
             <View style={styles.locationInfo}>
@@ -275,7 +275,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 12,
   },
-  childName: {
+  child_name: {
     fontSize: 16,
     fontWeight: "600",
     color: "#333",

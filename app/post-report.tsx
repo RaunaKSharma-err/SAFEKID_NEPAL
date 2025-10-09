@@ -28,7 +28,7 @@ type lastSeenType = {
 export default function PostReportScreen() {
   const [lastSeenCoordinates, setlastSeenCoordinates] =
     useState<lastSeenType | null>(null);
-  const [childName, setChildName] = useState("");
+  const [child_name, setchild_name] = useState("");
   const [childAge, setChildAge] = useState("");
   const [islocated, setIsLocated] = useState(false);
   const [description, setDescription] = useState("");
@@ -66,7 +66,7 @@ export default function PostReportScreen() {
   const finalCost = calculateFinalCost(baseCost, tokensToUse);
 
   const handleSubmit = async () => {
-    if (!childName || !childAge || !description || !childPhoto) {
+    if (!child_name || !childAge || !description || !childPhoto) {
       Alert.alert("Error", "Please fill in all fields and add a photo");
       return;
     }
@@ -84,7 +84,7 @@ export default function PostReportScreen() {
         parentId: user.id,
         parentName: user.name,
         parentPhone: user.phone,
-        childName,
+        child_name,
         childAge: parseInt(childAge),
         childPhoto,
         description,
@@ -178,7 +178,7 @@ export default function PostReportScreen() {
       `${place.name}, ${place.state || ""}, ${place.country}`
     );
     setResults([]);
-    };
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -214,8 +214,8 @@ export default function PostReportScreen() {
             <Text style={styles.label}>Child&apos;s Name *</Text>
             <TextInput
               style={styles.input}
-              value={childName}
-              onChangeText={setChildName}
+              value={child_name}
+              onChangeText={setchild_name}
               placeholder="Enter child's full name"
             />
           </View>
