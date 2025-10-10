@@ -19,7 +19,7 @@ export const [ReportsProvider, useReports] = createContextHook(() => {
       const { data, error } = await supabase
         .from("reports")
         .select("*, sightings(*)")
-        .order("created_at", { ascending: false });
+        .order("createdAt", { ascending: false });
 
       if (error) throw error;
 
@@ -48,17 +48,17 @@ export const [ReportsProvider, useReports] = createContextHook(() => {
         const { data, error } = await supabase
           .from("reports")
           .insert({
-            parent_id: report.parentId,
-            parent_name: report.parentName,
-            parent_phone: report.parentPhone,
-            child_name: report.childName,
-            child_age: report.childAge,
-            child_photo: report.childPhoto,
+            parentId: report.parentId,
+            parentName: report.parentName,
+            parentPhone: report.parentPhone,
+            child_name: report.child_name,
+            childAge: report.childAge,
+            childPhoto: report.childPhoto,
             description: report.description,
-            last_seen_location: report.lastSeenLocation,
+            lastSeenLocation: report.lastSeenLocation,
             last_seen_lat: report.lastSeenCoordinates?.latitude,
             last_seen_lng: report.lastSeenCoordinates?.longitude,
-            broadcast_area: report.broadcastArea,
+            broadcastArea: report.broadcastArea,
             cost: report.cost,
             status: report.status,
           })
