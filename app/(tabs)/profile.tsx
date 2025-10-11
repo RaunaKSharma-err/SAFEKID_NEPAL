@@ -25,6 +25,7 @@ export default function ProfileScreen() {
 
   const { user, signOut } = authContext || { user: null, signOut: () => {} };
   const { getMyReports } = reportsContext || { getMyReports: () => [] };
+  console.log(user);
 
   if (!user) return null;
 

@@ -33,6 +33,7 @@ export default function MapScreen() {
   const { getPlaceCoordinates } = useLocation();
   const { reports } = reportsContext || { reports: [] };
   const activeReports = reports.filter((report) => report.status === "active");
+  console.log(reports[0].sightings);
 
   useEffect(() => {
     if (!mapRef.current) return;

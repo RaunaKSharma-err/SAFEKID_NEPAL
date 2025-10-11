@@ -21,7 +21,7 @@ const leafletHTML = `<!DOCTYPE html>
   <div id="map"></div>
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script>
-    var map = L.map('map',{zoomControl: false,attributionControl: false}).setView([27.7172, 85.3240], 13);
+    var map = L.map('map',{zoomControl: false,attributionControl: false}).setView([27.7172, 85.3240], 16);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);

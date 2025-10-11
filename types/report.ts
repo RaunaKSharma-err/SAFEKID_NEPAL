@@ -18,7 +18,7 @@ export interface MissingChildReport {
   broadcastArea: BroadcastArea;
   cost: number;
   status: ReportStatus;
-  createdAt: string;
+  created_at: string;
   foundAt?: string;
   sightings: Sighting[];
 }

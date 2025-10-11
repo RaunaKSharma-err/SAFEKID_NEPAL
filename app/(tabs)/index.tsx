@@ -2,14 +2,7 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useReports } from "@/providers/ReportsProvider";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import {
-  AlertTriangle,
-  Clock,
-  Coins,
-  Eye,
-  Loader,
-  MapPin,
-} from "lucide-react-native";
+import { AlertTriangle, Clock, Coins, Eye, MapPin } from "lucide-react-native";
 import React, { useState } from "react";
 import {
   RefreshControl,
@@ -26,25 +19,17 @@ export default function FeedScreen() {
   const reportsContext = useReports();
   const authContext = useAuth();
 
-  const { reports } = reportsContext || { reports: [] };
+  const { reports, loadReports } = reportsContext || { reports: [] };
   const { user } = authContext || { user: null };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await reportsContext.getActiveReports();
+    loadReports();
     setTimeout(() => setRefreshing(false), 1000);
   };
+  console.log(reports);
 
   const activeReports = reports.filter((report) => report.status === "active");
-  console.log(activeReports);
-
-  if (!reports) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <Loader size={24} />
-      </SafeAreaView>
-    );
-  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -104,7 +89,7 @@ export default function FeedScreen() {
                     <View style={styles.timeContainer}>
                       <Clock size={14} color="#666" />
                       <Text style={styles.timeText}>
-                        {new Date(report.createdAt).toLocaleDateString()}
+                        {new Date(report.created_at).toLocaleDateString()}
                       </Text>
                     </View>
 
