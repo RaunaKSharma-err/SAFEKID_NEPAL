@@ -62,10 +62,12 @@ export default function MapScreen() {
 
         // Sightings
         for (const sighting of report.sightings) {
-          if (!sighting.coordinates) {
+          // If we don't have latitude/longitude, get them using geocoding
+          if (!sighting.latitude || !sighting.longitude) {
             const coords = await getPlaceCoordinates(sighting.location);
             if (!coords) continue;
 
+            // store in your coords map
             coordsMap[report.id].sightings[sighting.id] = coords;
 
             mapRef.current?.addMarker(
@@ -75,15 +77,16 @@ export default function MapScreen() {
               `Sighting: ${report.child_name}`
             );
           } else {
-            const coords = sighting.coordinates;
-            if (!coords) continue;
-
-            coordsMap[report.id].sightings[sighting.id] = coords;
+            // we already have coordinates
+            coordsMap[report.id].sightings[sighting.id] = {
+              latitude: sighting.latitude,
+              longitude: sighting.longitude,
+            };
 
             mapRef.current?.addMarker(
               sighting.id,
-              coords.latitude,
-              coords.longitude,
+              sighting.latitude,
+              sighting.longitude,
               `Sighting: ${report.child_name}`
             );
           }
@@ -180,8 +183,7 @@ export default function MapScreen() {
                         sighting.location
                       ) : (
                         <>
-                          Lat :{sighting.coordinates?.latitude} , Lng :
-                          {sighting.coordinates?.longitude}
+                          Lat :{sighting.latitude} , Lng :{sighting.longitude}
                         </>
                       )}
                     </Text>

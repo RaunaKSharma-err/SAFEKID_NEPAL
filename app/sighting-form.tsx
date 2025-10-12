@@ -102,7 +102,8 @@ export default function SightingFormScreen() {
         photo,
         description,
         location,
-        coordinates: coords,
+        latitude: coords.latitude,
+        longitude: coords.longitude,
       });
 
       updateTokens(user.tokens + 10);

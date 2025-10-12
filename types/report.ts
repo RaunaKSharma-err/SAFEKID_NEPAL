@@ -32,10 +32,8 @@ export interface Sighting {
   photo?: string;
   description: string;
   location: string;
-  coordinates?: {
-    latitude: number;
-    longitude: number;
-  };
+  latitude: number;
+  longitude: number;
   tokensEarned: number;
   createdAt: string;
   isVerified: boolean;
