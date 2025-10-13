@@ -108,8 +108,8 @@ export const [ReportsProvider, useReports] = createContextHook(() => {
             photo: sighting.photo,
             description: sighting.description,
             location: sighting.location,
-            latitude: sighting.coordinates?.latitude,
-            longitude: sighting.coordinates?.longitude,
+            latitude: sighting.latitude,
+            longitude: sighting.longitude,
           })
           .select()
           .single();
