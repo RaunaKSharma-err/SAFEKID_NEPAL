@@ -1,3 +1,4 @@
+import { handleUpload } from "@/components/handleImageUpload";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "@/providers/LocationProvider";
 import { useReports } from "@/providers/ReportsProvider";
@@ -55,7 +56,8 @@ export default function SightingFormScreen() {
     });
 
     if (!result.canceled) {
-      setPhoto(result.assets[0].uri);
+      const res = await handleUpload(result.assets[0].uri);
+      setPhoto(res);
     }
   };
 

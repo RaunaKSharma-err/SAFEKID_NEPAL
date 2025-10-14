@@ -1,3 +1,4 @@
+import { handleUpload } from "@/components/handleImageUpload";
 import { calculateFinalCost, getAreaCost } from "@/lib/payment";
 import { useAuth } from "@/providers/AuthProvider";
 import { useLocation } from "@/providers/LocationProvider";
@@ -34,6 +35,7 @@ export default function PostReportScreen() {
   const [description, setDescription] = useState("");
   const [lastSeenLocation, setLastSeenLocation] = useState("");
   const [childPhoto, setChildPhoto] = useState("");
+  const [childPhotoUrl, setChildPhotoUrl] = useState("");
   const [broadcastArea, setBroadcastArea] = useState<BroadcastArea>("city");
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
@@ -47,6 +49,22 @@ export default function PostReportScreen() {
     updateTokens: () => {},
   };
   const { createReport } = reportsContext || { createReport: async () => ({}) };
+  useEffect(() => {
+    async function getPhotoUrl() {
+      if (childPhotoUrl !== "") {
+        console.log(childPhotoUrl);
+        const res = await handleUpload(childPhotoUrl);
+        console.log(
+          "photo Url U:",
+          childPhotoUrl,
+          "and the shorten url is: ",
+          res
+        );
+        setChildPhoto(res);
+      }
+    }
+    getPhotoUrl();
+  }, [childPhotoUrl]);
 
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -57,7 +75,7 @@ export default function PostReportScreen() {
     });
 
     if (!result.canceled) {
-      setChildPhoto(result.assets[0].uri);
+      setChildPhotoUrl(result.assets[0].uri);
     }
   };
 
